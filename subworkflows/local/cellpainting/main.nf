@@ -56,7 +56,18 @@ workflow CELLPAINTING {
         }
         .groupTuple()
         .map { meta, images_meta_list, images_list ->
-            def all_channels = images_meta_list[0].channels
+            
+            def first_row_channels = images_meta_list[0].channels
+            def all_channels
+
+            // Check if the channels value is already a list
+            if (first_row_channels instanceof List) {
+                all_channels = first_row_channels
+            } else {
+                // It's a single value per row: collect all channels in this group and find the unique values
+                all_channels = images_meta_list.collect { it.channels }.unique()
+            }
+
             // Return tuple: (shared meta, channels, cycles, images, per-image metadata)
             [meta, all_channels, null, images_list, images_meta_list]
         }

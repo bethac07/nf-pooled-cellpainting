@@ -49,7 +49,7 @@ PIPELINE_CONFIGS = {
     },
     'illumapply': {
         'description': 'Illumination correction - uses original images + illumination functions',
-        'file_pattern': r'.*\.(?:ome\.tiff?|nd2)$',
+        'file_pattern': r'.*\.(?:tiff?|nd2)$',
         'metadata_cols': ['Metadata_Plate', 'Metadata_Well', 'Metadata_Site'],
         'include_illum_files': True,
         'supports_subdirs': True,
@@ -435,6 +435,8 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
             normalized_metadata['plate'] = first_entry['plate']
         if 'channels' in first_entry:
             normalized_metadata['channels'] = first_entry['channels']
+        if len(list(set([x['channels'] for x in metadata]))) > 1:
+            single_channel = True
         if 'batch' in first_entry:
             normalized_metadata['batch'] = first_entry['batch']
         if 'arm' in first_entry:
@@ -514,6 +516,9 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
             # Preserve channel if present (for single-channel images like segcheck)
             if 'channel' in entry:
                 metadata_entry['channel'] = str(entry['channel'])
+            if 'channels' in entry:
+                if single_channel:
+                    metadata_entry['channel'] = str(entry['channels'])
             result['image_metadata'].append(metadata_entry)
 
     # Extract optional fields
@@ -535,6 +540,9 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
         result['batch'] = str(metadata['batch'])
     if 'arm' in metadata:
         result['arm'] = str(metadata['arm'])
+    
+    if single_channel:
+        result['single_channel'] = True
 
     return result
 
@@ -750,7 +758,9 @@ def collect_and_group_files(
 
             # Store file based on whether it has cycle/channel information
             # NO PARSING - just use metadata from JSON
-            if entry_cycle is not None and entry_channel:
+            if metadata_json['single_channel']:
+                grouped[key]['images'][entry.get('channel')] = rel_path
+            elif entry_cycle is not None and entry_channel:
                 # Cycle + channel (like preprocess: Cycle01_DNA)
                 cycle_channel_key = f"Cycle{entry_cycle:02d}_{entry_channel}"
                 grouped[key]['images'][cycle_channel_key] = rel_path
@@ -1091,6 +1101,8 @@ def generate_csv_rows(
 
     if not grouped:
         raise ValueError("No grouped files to generate CSV rows from")
+
+    print('grouped', grouped)
 
     # Determine which metadata fields are present in JSON
     # If image_metadata array exists, always create Metadata_Well and Metadata_Site columns
