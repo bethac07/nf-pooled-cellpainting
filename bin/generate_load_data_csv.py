@@ -38,14 +38,14 @@ from typing import Dict, List, Tuple, Optional
 PIPELINE_CONFIGS = {
     'illumcalc': {
         'description': 'Illumination calculation - uses original multi-channel images',
-        'file_pattern': r'.*\.(?:ome\.tiff?|nd2)$',
+        'file_pattern': r'.*\.(?:tiff?|nd2)$',
         'metadata_cols': None,  # Dynamic based on has_cycles
         'metadata_cols_base': ['Metadata_Plate', 'Metadata_Well', 'Metadata_Site'],
         'metadata_cols_with_cycles': ['Metadata_Plate', 'Metadata_Well', 'Metadata_Site'],  # Cycle column name will be added dynamically
         'include_illum_files': False,
         'supports_subdirs': False,
         'cycle_aware': False,
-        'parse_function': 'parse_original_image'
+        'parse_function': 'parse_single_channel'
     },
     'illumapply': {
         'description': 'Illumination correction - uses original images + illumination functions',
@@ -54,7 +54,7 @@ PIPELINE_CONFIGS = {
         'include_illum_files': True,
         'supports_subdirs': True,
         'cycle_aware': True,
-        'parse_function': 'parse_original_image'
+        'parse_function': 'parse_single_channel'
     },
     'segcheck': {
         'description': 'Segmentation check - uses corrected images',
@@ -150,6 +150,16 @@ def parse_original_image(filename: str) -> Optional[Dict]:
         'frames': frames
     }
 
+def parse_single_channel(filename: str) -> Optional[Dict]:
+    #r02c02f01p01-ch1sk1fk1fl1.tiff
+    pattern = r'r\d+c\d+f\d+p(\d)+-ch(\d)sk\dfk\dfl\d\.(?:ome\.tiff?|nd2|tiff?)'
+    match = re.match(pattern, filename)
+
+    if match:
+        return {
+            'channel': match.group(1)
+        }
+    return None
 
 def parse_corrected_image(filename: str) -> Optional[Dict]:
     """
