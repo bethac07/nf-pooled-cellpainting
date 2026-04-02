@@ -1102,8 +1102,6 @@ def generate_csv_rows(
     if not grouped:
         raise ValueError("No grouped files to generate CSV rows from")
 
-    print('grouped', grouped)
-
     # Determine which metadata fields are present in JSON
     # If image_metadata array exists, always create Metadata_Well and Metadata_Site columns
     use_image_metadata = 'image_metadata' in metadata_json
