@@ -59,7 +59,7 @@ PIPELINE_CONFIGS = {
     'segcheck': {
         'description': 'Segmentation check - uses corrected images',
         'file_pattern': r'Plate_.*_Well_.*_Site_.*_Corr.*\.(?:tiff?|nd2)$',
-        'metadata_cols': ['Metadata_Plate', 'Metadata_Site', 'Metadata_Well', 'Metadata_Well_Value'],
+        'metadata_cols': ['Metadata_Plate', 'Metadata_Site', 'Metadata_Well'],
         'include_illum_files': False,
         'parse_function': 'parse_corrected_image'
     },
@@ -73,14 +73,14 @@ PIPELINE_CONFIGS = {
     'preprocess': {
         'description': 'Barcoding preprocessing - uses cycle-based corrected images',
         'file_pattern': r'Plate_.*_Well_.*_Site_.*_Cycle\d+_(DNA|DAPI|[ACGT])\.(?:tiff?|nd2)$',
-        'metadata_cols': ['Metadata_Plate', 'Metadata_Site', 'Metadata_Well', 'Metadata_Well_Value'],
+        'metadata_cols': ['Metadata_Plate', 'Metadata_Site', 'Metadata_Well'],
         'include_illum_files': False,
         'parse_function': 'parse_preprocess_image'
     },
     'combined': {
         'description': 'Combined analysis - uses both cropped cell painting and barcoding images',
         'file_pattern': r'(Plate_.*_Well_.*_Site_.*_Corr.*\.(?:tiff?|nd2)|Plate_.*_Well_.*_Site_.*_Cycle\d{2}_\w+\.(?:tiff?|nd2)|Plate\d+-[A-Z]\d+_Corr.*_Site_\d+\.(?:tiff?|nd2)|Plate\d+-[A-Z]\d+_Cycle\d+_\w+_Site_\d+\.(?:tiff?|nd2))$',
-        'metadata_cols': ['Metadata_Plate', 'Metadata_Site', 'Metadata_Well', 'Metadata_Well_Value'],
+        'metadata_cols': ['Metadata_Plate', 'Metadata_Site', 'Metadata_Well'],
         'include_illum_files': False,
         'parse_function': 'parse_combined_image'
     }
@@ -1171,10 +1171,6 @@ def generate_csv_rows(
             # Conditionally include Metadata_Well if present in JSON
             if has_well:
                 row['Metadata_Well'] = well
-                # Some pipelines (segcheck, preprocess) use Metadata_Well_Value as well
-                config_cols = config.get('metadata_cols', []) or config.get('metadata_cols_base', [])
-                if 'Metadata_Well_Value' in config_cols:
-                    row['Metadata_Well_Value'] = well
 
             # Conditionally include Metadata_Site if present in JSON
             if has_site:
