@@ -1328,6 +1328,9 @@ def generate_csv_rows(
                         # For other pipelines: add FileName_{channel} columns
                         for channel, filename in sorted(file_data['images'].items()):
                             row[f'FileName_{channel}'] = filename
+                        if file_data['illum']:
+                            for channel, illum_file in sorted(file_data['illum'].items()):
+                                row[f'FileName_Illum{channel}'] = illum_file
 
             rows.append(row)
 
@@ -1542,7 +1545,7 @@ def main():
             metadata_cycles,
             metadata_json
         )
-
+        print('grouped', grouped)
         # Generate rows
         print(f"\nStep 2/4: Generating CSV rows...", file=sys.stderr)
         rows = generate_csv_rows(
@@ -1555,6 +1558,7 @@ def main():
             metadata_json,
             args.cycle_metadata_name
         )
+        print('rows', rows)
 
         # Apply subdirectory staging if requested
         subdir_map = {}
