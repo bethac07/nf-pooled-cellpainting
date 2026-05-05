@@ -38,7 +38,7 @@ from typing import Dict, List, Tuple, Optional
 PIPELINE_CONFIGS = {
     'illumcalc': {
         'description': 'Illumination calculation - uses original multi-channel images',
-        'file_pattern': r'.*\.(?:ome\.tiff?|nd2)$',
+        'file_pattern': r'.*\.(?:tiff?|nd2)$',
         'metadata_cols': None,  # Dynamic based on has_cycles
         'metadata_cols_base': ['Metadata_Plate', 'Metadata_Well', 'Metadata_Site'],
         'metadata_cols_with_cycles': ['Metadata_Plate', 'Metadata_Well', 'Metadata_Site'],  # Cycle column name will be added dynamically
@@ -49,7 +49,7 @@ PIPELINE_CONFIGS = {
     },
     'illumapply': {
         'description': 'Illumination correction - uses original images + illumination functions',
-        'file_pattern': r'.*\.(?:ome\.tiff?|nd2)$',
+        'file_pattern': r'.*\.(?:tiff?|nd2)$',
         'metadata_cols': ['Metadata_Plate', 'Metadata_Well', 'Metadata_Site'],
         'include_illum_files': True,
         'supports_subdirs': True,
@@ -117,38 +117,40 @@ def parse_original_image(filename: str) -> Optional[Dict]:
     #   - Channel([^_]+): Captures channel names (e.g., "DNA,Phalloidin,CHN2")
     #   - Cycle\d+: Cycle number (not captured - cycle from JSON)
     #   - Seq\d+: Sequence number (not captured)
-    pattern_with_cycle = r'Well[A-Z]\d+_Point[A-Z]\d+_\d+_Channel([^_]+)_Cycle\d+_Seq\d+\.(?:ome\.tiff?|nd2)'
-    match = re.search(pattern_with_cycle, filename)
 
-    if match:
-        channels_str = match.group(1)
-        # Parse channels - could be comma-separated (e.g., "DNA,Phalloidin,CHN2")
-        channels = [ch.strip() for ch in channels_str.split(',')]
-        # Build frame mapping - each channel gets its sequential frame number
-        # Frame 0 = first channel, Frame 1 = second channel, etc.
-        frames = {ch: idx for idx, ch in enumerate(channels)}
-        return {
-            'channels': channels,
-            'frames': frames
-        }
-
-    # Try pattern without cycle (same structure but no Cycle\d+ component)
-    pattern = r'Well[A-Z]\d+_Point[A-Z]\d+_\d+_Channel([^_]+)_Seq\d+\.(?:ome\.tiff?|nd2)'
-    match = re.search(pattern, filename)
-
-    if not match:
-        return None
-
-    channels_str = match.group(1)
-    # Parse channels - could be comma-separated
-    channels = [ch.strip() for ch in channels_str.split(',')]
-    # Build frame mapping - each channel gets its sequential frame number
-    frames = {ch: idx for idx, ch in enumerate(channels)}
-
-    return {
-        'channels': channels,
-        'frames': frames
+    possible_multichannel_patterns = {
+        "multichannel_with_cycle" : r'Well[A-Z]\d+_Point[A-Z]\d+_\d+_Channel([^_]+)_Cycle\d+_Seq\d+\.(?:ome\.tiff?|nd2)',
+        "multichannel_without_cycle" : r'Well[A-Z]\d+_Point[A-Z]\d+_\d+_Channel([^_]+)_Seq\d+\.(?:ome\.tiff?|nd2)'
     }
+
+    for _, pattern in possible_multichannel_patterns.items():
+
+        match = re.search(pattern, filename) 
+
+        if match:
+            channels_str = match.group(1)
+            # Parse channels - could be comma-separated (e.g., "DNA,Phalloidin,CHN2")
+            channels = [ch.strip() for ch in channels_str.split(',')]
+            # Build frame mapping - each channel gets its sequential frame number
+            frames = {ch: idx for idx, ch in enumerate(channels)}
+
+            return {
+                'channels': channels,
+                'frames': frames
+            }
+    
+    single_channel_pattern = r'r[0-9]{2}c[0-9]{2}f[0-9]{2}p[0-9]{2}-ch[0-9]{1,2}.*\.tiff'
+    #We have single channel images where channel is indicated with a number; frame must be zero
+    #We don't know channel names at this point, they must come from the sample sheet, so we'll pass False
+    match = re.match(single_channel_pattern, filename)
+    if match:
+        return {
+                'channel': False,
+                'frames': 0
+            }
+
+        
+    return None
 
 
 def parse_corrected_image(filename: str) -> Optional[Dict]:
@@ -423,12 +425,16 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
         # Extract common fields that should be consistent across all entries
         if 'plate' in first_entry:
             normalized_metadata['plate'] = first_entry['plate']
-        if 'channels' in first_entry:
-            normalized_metadata['channels'] = first_entry['channels']
         if 'batch' in first_entry:
             normalized_metadata['batch'] = first_entry['batch']
         if 'arm' in first_entry:
             normalized_metadata['arm'] = first_entry['arm']
+        
+        normalized_metadata['channels'] = sorted(set(
+            entry.get('channels')
+            for entry in metadata
+            if entry.get('channels') is not None
+        ))
 
         # Detect cycles: if multiple unique cycles exist, create 'cycles' list
         # Otherwise use single 'cycle' value
@@ -504,6 +510,8 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
             # Preserve channel if present (for single-channel images like segcheck)
             if 'channel' in entry:
                 metadata_entry['channel'] = str(entry['channel'])
+            elif 'channels' in entry:
+                metadata_entry['channel'] = str(entry['channels'])
             result['image_metadata'].append(metadata_entry)
 
     # Extract optional fields

@@ -62,7 +62,7 @@ workflow BARCODING {
         }
         .groupTuple()
         .map { meta, images_meta_list, images_list ->
-            def all_channels = images_meta_list[0].channels
+            def all_channels = images_meta_list.channels.unique().join(", ")
             // Return tuple: (shared meta, channels, cycle, images, per-image metadata)
             [meta, all_channels, meta.cycle, images_list, images_meta_list]
         }
