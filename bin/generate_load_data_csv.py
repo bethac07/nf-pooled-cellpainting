@@ -409,6 +409,8 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
     except Exception as e:
         raise IOError(f"Error reading metadata file {metadata_json_path}: {e}")
 
+    single_channels_present = False
+
     # Handle simplified array format: if JSON is an array, extract common fields from first entry
     if isinstance(metadata, list):
         if not metadata:
