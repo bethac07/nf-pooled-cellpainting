@@ -435,7 +435,7 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
                 if isinstance(entry['channels'],list):
                     channels_aggregated += entry['channels']
             normalized_metadata['channels'] = list(set(channels_aggregated))
-        elif type(first_entry['channels'])== 'str':
+        elif isinstance(first_entry['channels'],str):
             normalized_metadata['channels'] = ",".join(sorted(set(
                 entry.get('channels')
                 for entry in metadata
