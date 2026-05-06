@@ -137,7 +137,7 @@ def parse_original_image(filename: str) -> Optional[Dict]:
                 'channels': channels,
                 'frames': frames
             }
-    
+
     single_channel_pattern = r'r[0-9]{2}c[0-9]{2}f[0-9]{2}p[0-9]{2}-ch[0-9]{1,2}.*\.tiff'
     #We have single channel images where channel is indicated with a number; frame must be zero
     #We don't know channel names at this point, they must come from the sample sheet, so we'll pass False
@@ -147,7 +147,7 @@ def parse_original_image(filename: str) -> Optional[Dict]:
                 'channel': False,
                 'frames': 0
             }
-        
+
     return None
 
 
