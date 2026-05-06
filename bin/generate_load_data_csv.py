@@ -89,7 +89,9 @@ PIPELINE_CONFIGS = {
 
 def parse_original_image(filename: str) -> Optional[Dict]:
     """
-    Parse original multi-channel image filename to extract ONLY channel information.
+    Parse original image filename to extract ONLY channel information.
+
+    We check for multichannel patterns first, and then for a single-channel pattern.
 
     IMPORTANT: This function ONLY parses channel info from filenames.
     Metadata (plate, well, site, cycle) MUST come from JSON - NOT from filenames.
@@ -103,7 +105,7 @@ def parse_original_image(filename: str) -> Optional[Dict]:
 
     Returns:
         Dict with:
-        - 'channels': List of channel names (e.g., ['DNA', 'Phalloidin', 'CHN2'])
+        - 'channels': List of channel names (e.g., ['DNA', 'Phalloidin', 'CHN2']), OR False if channel name is not in the file name.
         - 'frames': Dict mapping channel name to frame index (0-indexed)
         Returns None if filename doesn't match expected pattern
 
