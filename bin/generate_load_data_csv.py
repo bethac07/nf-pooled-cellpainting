@@ -432,11 +432,13 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
         if 'arm' in first_entry:
             normalized_metadata['arm'] = first_entry['arm']
         
-        normalized_metadata['channels'] = sorted(set(
+        normalized_metadata['channels'] = ",".join(sorted(set(
             entry.get('channels')
             for entry in metadata
             if entry.get('channels') is not None
-        ))
+        )))
+
+        single_channels_present = normalized_metadata['channels'] != first_entry['channels']
 
         # Detect cycles: if multiple unique cycles exist, create 'cycles' list
         # Otherwise use single 'cycle' value
@@ -512,7 +514,7 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
             # Preserve channel if present (for single-channel images like segcheck)
             if 'channel' in entry:
                 metadata_entry['channel'] = str(entry['channel'])
-            elif 'channels' in entry:
+            elif single_channels_present:
                 metadata_entry['channel'] = str(entry['channels'])
             result['image_metadata'].append(metadata_entry)
 
