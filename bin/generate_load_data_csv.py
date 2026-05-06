@@ -119,16 +119,13 @@ def parse_original_image(filename: str) -> Optional[Dict]:
     #   - Channel([^_]+): Captures channel names (e.g., "DNA,Phalloidin,CHN2")
     #   - Cycle\d+: Cycle number (not captured - cycle from JSON)
     #   - Seq\d+: Sequence number (not captured)
-
     possible_multichannel_patterns = {
         "multichannel_with_cycle" : r'Well[A-Z]\d+_Point[A-Z]\d+_\d+_Channel([^_]+)_Cycle\d+_Seq\d+\.(?:ome\.tiff?|nd2)',
         "multichannel_without_cycle" : r'Well[A-Z]\d+_Point[A-Z]\d+_\d+_Channel([^_]+)_Seq\d+\.(?:ome\.tiff?|nd2)'
     }
 
     for _, pattern in possible_multichannel_patterns.items():
-
         match = re.search(pattern, filename) 
-
         if match:
             channels_str = match.group(1)
             # Parse channels - could be comma-separated (e.g., "DNA,Phalloidin,CHN2")
@@ -150,7 +147,6 @@ def parse_original_image(filename: str) -> Optional[Dict]:
                 'channel': False,
                 'frames': 0
             }
-
         
     return None
 
