@@ -125,7 +125,7 @@ def parse_original_image(filename: str) -> Optional[Dict]:
     }
 
     for _, pattern in possible_multichannel_patterns.items():
-        match = re.search(pattern, filename) 
+        match = re.search(pattern, filename)
         if match:
             channels_str = match.group(1)
             # Parse channels - could be comma-separated (e.g., "DNA,Phalloidin,CHN2")
