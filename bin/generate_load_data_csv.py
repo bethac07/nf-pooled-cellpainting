@@ -757,9 +757,12 @@ def collect_and_group_files(
             # Store file based on whether it has cycle/channel information
             # NO PARSING - just use metadata from JSON
             if entry_cycle is not None and entry_channel:
-                # Cycle + channel (like preprocess: Cycle01_DNA)
-                cycle_channel_key = f"Cycle{entry_cycle:02d}_{entry_channel}"
-                grouped[key]['images'][cycle_channel_key] = rel_path
+                if metadata_cycles:
+                    # Cycle + channel (like preprocess: Cycle01_DNA)
+                    cycle_channel_key = f"Cycle{entry_cycle:02d}_{entry_channel}"
+                    grouped[key]['images'][cycle_channel_key] = rel_path
+                else:
+                    grouped[key]['images'][entry_channel] = rel_path
             elif entry_cycle is not None:
                 # Multi-cycle only: store per cycle
                 cycle_num = entry_cycle
@@ -1299,7 +1302,51 @@ def generate_csv_rows(
                             f"in {plate}/{well}/Site{site}",
                             file=sys.stderr
                         )
-            # PATTERN 3: Single-channel files or cycle-based files
+
+            # PATTERN 3: Single channel files for illum calc and apply
+            elif 'illum' in pipeline_type:
+                # Get channels from JSON metadata (required!)
+                if metadata_json and 'channels' in metadata_json:
+                    channels_to_use = metadata_json['channels']
+                elif metadata_channels:
+                    channels_to_use = metadata_channels
+                else:
+                    raise ValueError("Channels must be specified in JSON metadata or CLI args")
+
+                # Determine if we need cycle-specific column names
+                # (for illumapply with cycle-aware flag)
+                use_cycle_columns = config.get('cycle_aware', False) and metadata_cycle is not None
+
+                # Add FileName and Frame for each channel
+                # All channels point to the same file, differentiated by Frame number
+                # Frame 0 = first channel, Frame 1 = second channel, etc.
+                for frame_idx, channel in enumerate(channels_to_use):
+                    # Generate column names with or without cycle prefix
+                    if use_cycle_columns:
+                        cycle_str = f"{metadata_cycle:02d}"
+                        row[f'FileName_Cycle{cycle_str}_Orig{channel}'] = file_data['images'][channel]
+                    else:
+                        row[f'FileName_Orig{channel}'] = file_data['images'][channel]
+
+                    # Add illumination file if available
+                    # Match illumination files by channel name (they should use metadata channel names)
+                    if channel in file_data['illum']:
+                        if use_cycle_columns:
+                            row[f'FileName_Cycle{cycle_str}_Illum{channel}'] = file_data['illum'][channel]
+                        else:
+                            row[f'FileName_Illum{channel}'] = file_data['illum'][channel]
+
+                # Validate we have all required illumination files
+                if config['include_illum_files']:
+                    missing_illum = [ch for ch in channels_to_use if ch not in file_data['illum']]
+                    if missing_illum:
+                        print(
+                            f"⚠ Missing illumination files for channels {missing_illum} "
+                            f"in {plate}/{well}/Site{site}",
+                            file=sys.stderr
+                            )
+
+            # PATTERN 4: Single-channel files or cycle-based files
             # (e.g., analysis, segcheck, preprocess, combined pipelines)
             else:
                 # Multiple separate files, one per channel or per cycle/channel combination
