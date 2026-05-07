@@ -429,20 +429,21 @@ def load_metadata_json(metadata_json_path: str) -> Dict:
             normalized_metadata['batch'] = first_entry['batch']
         if 'arm' in first_entry:
             normalized_metadata['arm'] = first_entry['arm']
-        if isinstance(first_entry['channels'],list):
-            channels_aggregated = []
-            for entry in metadata:
-                if isinstance(entry['channels'],list):
-                    channels_aggregated += entry['channels']
-            normalized_metadata['channels'] = list(set(channels_aggregated))
-        elif isinstance(first_entry['channels'],str):
-            normalized_metadata['channels'] = ",".join(sorted(set(
-                entry.get('channels')
-                for entry in metadata
-                if entry.get('channels') is not None
-            )))
+        if 'channels' in first_entry and first_entry['channels'] is not None:
+            if isinstance(first_entry['channels'], list):
+                channels_aggregated = []
+                for entry in metadata:
+                    if isinstance(entry.get('channels'), list):
+                        channels_aggregated += entry['channels']
+                normalized_metadata['channels'] = list(set(channels_aggregated))
+            elif isinstance(first_entry['channels'], str):
+                normalized_metadata['channels'] = ",".join(sorted(set(
+                    entry.get('channels')
+                    for entry in metadata
+                    if entry.get('channels') is not None
+                )))
 
-        single_channels_present = normalized_metadata['channels'] != first_entry['channels']
+            single_channels_present = normalized_metadata['channels'] != first_entry['channels']
 
         # Detect cycles: if multiple unique cycles exist, create 'cycles' list
         # Otherwise use single 'cycle' value
