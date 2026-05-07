@@ -110,13 +110,13 @@ workflow BARCODING {
 
             if (barcoding_illumapply_grouping == "site") {
                 // Site-level grouping (current behavior)
-                group_key = meta.subMap(['batch', 'plate', 'well', 'site', 'arm'])
+                group_key = meta.subMap(['batch', 'plate', 'well', 'site', 'arm', 'channels'])
                 group_id = "${meta.batch}_${meta.plate}_${meta.well}_Site${meta.site}"
             }
             else {
                 // Well-level grouping (new behavior)
                 // Site is NOT in the grouping key, but preserved in image metadata
-                group_key = meta.subMap(['batch', 'plate', 'well', 'arm'])
+                group_key = meta.subMap(['batch', 'plate', 'well', 'arm', 'channels'])
                 group_id = "${meta.batch}_${meta.plate}_${meta.well}"
             }
 
