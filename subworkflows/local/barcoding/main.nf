@@ -110,13 +110,13 @@ workflow BARCODING {
 
             if (barcoding_illumapply_grouping == "site") {
                 // Site-level grouping (current behavior)
-                group_key = meta.subMap(['batch', 'plate', 'well', 'site', 'arm', 'channels'])
+                group_key = meta.subMap(['batch', 'plate', 'well', 'site', 'arm'])
                 group_id = "${meta.batch}_${meta.plate}_${meta.well}_Site${meta.site}"
             }
             else {
                 // Well-level grouping (new behavior)
                 // Site is NOT in the grouping key, but preserved in image metadata
-                group_key = meta.subMap(['batch', 'plate', 'well', 'arm', 'channels'])
+                group_key = meta.subMap(['batch', 'plate', 'well', 'arm'])
                 group_id = "${meta.batch}_${meta.plate}_${meta.well}"
             }
 
@@ -132,7 +132,7 @@ workflow BARCODING {
             // For barcoding, we expect multiple cycles
             def all_cycles = images_meta_list.collect { m -> m.cycle }.findAll { c -> c != null }.unique().sort()
             def unique_cycles = all_cycles.size() > 1 ? all_cycles : null
-            def all_channels = images_meta_list[0].channels
+            def all_channels = images_meta_list.channels.unique().join(", ")
 
             // Return tuple: (shared meta, channels, cycles, images, per-image metadata)
             [group_meta, all_channels, unique_cycles, images_list, images_meta_list]
