@@ -1316,7 +1316,7 @@ def generate_csv_rows(
 
                 # Determine if we need cycle-specific column names
                 # (for illumapply with cycle-aware flag)
-                use_cycle_columns = config.get('cycle_aware', False) and metadata_cycle is not None
+                use_cycle_columns = config.get('cycle_aware', False) and metadata_cycle is not None and has_cycles
 
                 # Add FileName and Frame for each channel
                 # All channels point to the same file, differentiated by Frame number
