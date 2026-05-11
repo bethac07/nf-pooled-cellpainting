@@ -934,7 +934,7 @@ def collect_and_group_files(
                 sorted_paths = sorted(img_paths, key=lambda x: int(re.match(r'img([0-9]{1,5})',x[1]).group(1)))
             else:
                 sorted_paths = sorted(img_paths, key=lambda x: x[1])
-            
+
             if len(sorted_paths) == len(metadata_cycles):
                 # Clear and recreate as _files_by_cycle
                 for k, _ in img_paths:
@@ -960,9 +960,9 @@ def collect_and_group_files(
                 grouped[key]['cycles'] = set(metadata_cycles)
 
                 for cyc_idx, cycle_num in enumerate(sorted(metadata_cycles)):
-                    for chan_idx, channel in enumerate(sorted(parsed_channels)):
+                    for chan_idx, channel in enumerate(parsed_channels):
                         img_path = sorted_paths[cyc_idx*len(parsed_channels)+chan_idx][1]
-                        # No parsing needed - just store the file path
+                        # This feels dangerous, and should probably be changed to a parser someday
                         if cycle_num not in  grouped[key]['images']['_files_by_cycle']:
                             grouped[key]['images']['_files_by_cycle'][cycle_num] = {
                                 channel: img_path
@@ -1281,7 +1281,7 @@ def generate_csv_rows(
                                     f"in {plate}/{well}/Site{site}",
                                     file=sys.stderr
                                 )
-            
+
             # PATTERN 2: Multi-cycle single-channel files
             elif '_files_by_cycle' in file_data['images']:
                 # Multi-cycle multi-channel images - generate columns for each cycle
@@ -1388,7 +1388,6 @@ def generate_csv_rows(
 
             # PATTERN 4: Single channel files for illum calc and apply, without cycles
             elif 'illum' in pipeline_type:
-                print("made it to pattern 3")
                 # Get channels from JSON metadata (required!)
                 if metadata_json and 'channels' in metadata_json:
                     channels_to_use = metadata_json['channels']
