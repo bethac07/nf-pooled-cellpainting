@@ -929,7 +929,11 @@ def collect_and_group_files(
                 continue
 
             # Sort and assign to cycles by order
-            sorted_paths = sorted(img_paths, key=lambda x: x[1])
+            if '/' in img_paths[0][1]:
+                #We have sub-paths staged in order - string matching won't work, we need int matching
+                sorted_paths = sorted(img_paths, key=lambda x: int(re.match(r'img([0-9]{1,5})',x[1]).group(1)))
+            else:
+                sorted_paths = sorted(img_paths, key=lambda x: x[1])
             
             if len(sorted_paths) == len(metadata_cycles):
                 # Clear and recreate as _files_by_cycle
