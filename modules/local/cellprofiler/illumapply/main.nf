@@ -49,7 +49,7 @@ staged_list = [os.path.sep.join(x.split(os.path.sep)[1:]) for x in staged_list]
 
 for x in range(len(metadata)):
     if metadata[x]['filename']==staged_list[x].split(os.path.sep)[-1]:
-        
+
         metadata[x]['filename']=staged_list[x]
 
 with open('metadata.json','w') as f:
