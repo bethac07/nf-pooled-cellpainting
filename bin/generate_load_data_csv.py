@@ -72,7 +72,7 @@ PIPELINE_CONFIGS = {
     },
     'preprocess': {
         'description': 'Barcoding preprocessing - uses cycle-based corrected images',
-        'file_pattern': r'Plate_.*_Well_.*_Site_.*_Cycle\d+_(DNA|DAPI|[ACGT])\.(?:tiff?|nd2)$',
+        'file_pattern': r'Plate_.*_Well_.*_Site_.*_Cycle\d+_(DNA|DAPI|A488|A568|A647|[ACGT])\.(?:tiff?|nd2)$',
         'metadata_cols': ['Metadata_Plate', 'Metadata_Site', 'Metadata_Well', 'Metadata_Well_Value'],
         'include_illum_files': False,
         'parse_function': 'parse_preprocess_image'
@@ -950,7 +950,7 @@ def collect_and_group_files(
                         'file': img_path
                     }
 
-            elif len(parsed_channels)>0 and len(sorted_paths) == len(metadata_cycles)*len(parsed_channels):
+            elif len(parsed_channels)>0 and len(sorted_paths) == len(metadata_cycles)*len(parsed_channels) and 'illum' in pipeline_type:
 
                 # Clear and recreate as _files_by_cycle
                 for k, _ in img_paths:
@@ -1282,7 +1282,7 @@ def generate_csv_rows(
                                     file=sys.stderr
                                 )
 
-            # PATTERN 2: Multi-cycle single-channel files
+            # PATTERN 2: Multi-cycle single-channel files from illum corr or apply pipelines
             elif '_files_by_cycle' in file_data['images']:
                 # Multi-cycle multi-channel images - generate columns for each cycle
                 files_by_cycle = file_data['images']['_files_by_cycle']
