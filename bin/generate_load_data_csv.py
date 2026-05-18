@@ -781,7 +781,9 @@ def collect_and_group_files(
                     if file_cycle_to_subfolder and file_cycle_key in file_cycle_to_subfolder:
                         # Construct path using the mapped subfolder: imgN/filename
                         subfolder_idx = file_cycle_to_subfolder[file_cycle_key]
-                        filename = os.path.basename(img_path)
+                        # NB: previous version referenced an undefined `img_path`; rel_path is
+                        # the resolved staged path and its basename is the file's leaf name.
+                        filename = os.path.basename(rel_path)
                         cycle_aware_path = f"img{subfolder_idx}/{filename}"
                         grouped[key]['images']['_files_by_cycle'][cycle_num] = {
                             'file': cycle_aware_path
@@ -1223,11 +1225,18 @@ def generate_csv_rows(
             # Strategy depends on file organization pattern
             # ------------------------------------------------------------------
 
+            # PATTERN 1 / PATTERN 2 share the same outer key (_files_by_cycle); we
+            # discriminate by peeking *inside* a cycle dict, since both layouts arrive here:
+            #   PATTERN 1: {cycle: {'file': path}}        — one multi-channel OME-TIFF per cycle
+            #   PATTERN 2: {cycle: {channel: path, ...}}  — one file per channel per cycle (Phenix)
+            files_by_cycle = file_data['images'].get('_files_by_cycle')
+            sample_cycle = next(iter(files_by_cycle.values()), None) if files_by_cycle else None
+            is_multichannel_per_cycle = isinstance(sample_cycle, dict) and 'file' in sample_cycle
+
             # PATTERN 1: Multi-cycle multi-channel files
-            # (e.g., illumcalc with multiple cycles)
-            if '_files_by_cycle' in file_data['images'] and 'file' in file_data['images'][list(file_data['images'].keys())[0]]:
+            # (e.g., illumcalc with multiple cycles; test profile uses this with n_frames>1)
+            if files_by_cycle and is_multichannel_per_cycle:
                 # Multi-cycle multi-channel images - generate columns for each cycle
-                files_by_cycle = file_data['images']['_files_by_cycle']
                 illum_by_cycle = file_data['illum'].get('_by_cycle', {})
 
                 # Get channels from JSON metadata (required!)
@@ -1283,9 +1292,8 @@ def generate_csv_rows(
                                 )
 
             # PATTERN 2: Multi-cycle single-channel files from illum corr or apply pipelines
-            elif '_files_by_cycle' in file_data['images']:
-                # Multi-cycle multi-channel images - generate columns for each cycle
-                files_by_cycle = file_data['images']['_files_by_cycle']
+            # (Phenix-style: separate file per channel inside each cycle)
+            elif files_by_cycle:
                 illum_by_cycle = file_data['illum'].get('_by_cycle', {})
 
                 # Get channels from JSON metadata (required!)
